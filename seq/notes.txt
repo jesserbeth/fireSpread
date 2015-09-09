@@ -1,0 +1,35 @@
+   NOTES FOR HOW I GOT THE DATA D: 
+      Data I need                   Place I get it          (how it is produced)
+      deadXh, liveX:                effectiveHeatingNumber  (calculated in fuelmodel)
+                                    load                    (from .fmd)
+                                    areaWeightingFactor     (calculated in fuelmodel)
+                                    FuelMoisture            (all zeros)
+      
+      fineDeadExctinctionDensity:   fineDeadRatio           (calculated in fuelmodel)
+                                    extinctionMoisture      (from .fmd)
+                                    liveExtinction          (calculated in fuelmodel)
+                                    fuelDensity             (calculated in fuelmodel)
+
+      areasReactionFactors:         deadArea                (calculated in fuelmodel)
+                                    liveArea                (calculated in fuelmodel)
+                                    deadReactionFactor      (calculated in fuelmodel)
+                                    liveReactionFactor      (calculated in fuelmodel)
+
+      slopeWindFactors:             slopeK                  (calculated in fuelmodel)
+                                    windK                   (calculated in fuelmodel)
+                                    windB                   (calculated in fuelmodel)
+                                    windE                   (calculated in fuelmodel)
+
+      residenceFluxLiveSAV:         residenceTime           (calculated in fuelmodel)
+                                    propagatingFlux         (calculated in fuelmodel)
+                                    SAV                     (from .fmd)
+                                    SAV                     (from .fmd)
+
+      deadSAVBurnable:              SAV                     (from .fmd)
+                                    SAV                     (from .fmd)
+                                    SAV                     (from .fmd)
+                                    burnable                (always true)           
+
+      fuelSAVAccel:                 fuelSAV                 (calculated in fuelmodel)
+                                    accelerationConstant    (0.115)
+
