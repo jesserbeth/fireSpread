@@ -15,10 +15,6 @@
 //   printf("Kernel: %d\n", end);
 // }
 
-#define MT 1
-#define IMT 0
-#define BD 0
-
 int main(){
   // float memTime, calcTime;
   cudaError_t devError = cudaSetDevice(0);
@@ -29,7 +25,7 @@ int main(){
   // cout << "Name: " << prop.name << endl;
   // cout << "RegPerBlock: " << prop.regsPerBlock << endl;
   // int SIMTYPE = 1;
-   for(int S = 2048; S <= 2048; S<<=1){
+   for(int S = 64; S <= 64; S<<=1){
     cout << "Timing: " << S << "x" << S << " Input" << endl;
       // Declare simulation variables
       // int cell, row, col, nrow, ncol, ncell;
@@ -46,13 +42,13 @@ int main(){
     // Allocate Roth Data for GPU
     float* gpuRoth;
     int* gpuTime;
-    int* timeSteppers;
+    float* timeSteppers;
     float* loc_L_n;
     float* loc_burnDist;
     bool* check;
     gpuRoth = (float*)malloc(sim.simDimX*sim.simDimY*3*sizeof(float));
     gpuTime = (int*)malloc(sim.simDimX*sim.simDimY*sizeof(int));
-    timeSteppers = (int*)malloc(2*sizeof(int));
+    timeSteppers = (float*)malloc(2*sizeof(float));
     loc_L_n = (float*)malloc(16*sizeof(float));
     check = (bool*)malloc(sim.simDimX*sim.simDimY*sizeof(bool));
     loc_burnDist = (float*)malloc(8*sim.simDimX*sim.simDimY*sizeof(float));
@@ -83,89 +79,90 @@ int main(){
 
     char simType[20];
 
-    sprintf(simType, "../out/MT");
+    sprintf(simType, "../out/IMT");
 
     // sprintf(simType, "../out/GPU_DEBUG");
     // sprintf(simType, "../out/GPU_DEBUG");
 
     // Allocate Cuda Variables
     gettimeofday(&start, NULL);
-    int *g_ignTime;
+    int *g_ignTime_in;
+    int *g_ignTime_out;
     float *g_rothData;
     int *g_times;
     float *g_L_n;
+    int *g_ignTime_step;
+    bool  *g_check;
 
-    cudaError_t err = cudaMalloc( (void**) &g_ignTime, sim.simDimX*sim.simDimY*sizeof(int));
+    cudaError_t err = cudaMalloc( (void**) &g_ignTime_in, sim.simDimX*sim.simDimY*sizeof(int));
+    err = cudaMalloc( (void**) &g_ignTime_out, sim.simDimX*sim.simDimY*sizeof(int));
     err = cudaMalloc( (void**) &g_rothData, sim.simDimX*sim.simDimY*3*sizeof(float));
     err = cudaMalloc( (void**) &g_times, 2*sizeof(int));
     err = cudaMalloc( (void**) &g_L_n, 16*sizeof(float));
+    err = cudaMalloc( (void**) &g_check, sim.simDimX*sim.simDimY*sizeof(bool));
+    err = cudaMalloc( (void**) &g_ignTime_step, sim.simDimX*sim.simDimY*sizeof(float));
 
     if (err != cudaSuccess) {
         std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
         exit(1);
       }
 
-    err = cudaMemcpy(g_ignTime, gpuTime, sim.simDimX*sim.simDimY*sizeof(int), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(g_ignTime_in, gpuTime, sim.simDimX*sim.simDimY*sizeof(int), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(g_ignTime_out, gpuTime, sim.simDimX*sim.simDimY*sizeof(int), cudaMemcpyHostToDevice);
     err = cudaMemcpy(g_rothData, gpuRoth, sim.simDimX*sim.simDimY*3*sizeof(float), cudaMemcpyHostToDevice);
     err = cudaMemcpy(g_times, timeSteppers, 2*sizeof(int), cudaMemcpyHostToDevice);
     err = cudaMemcpy(g_L_n, loc_L_n, 16*sizeof(float), cudaMemcpyHostToDevice);
-
-    if (err != cudaSuccess) {
-        std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-        exit(1);
-    }
+    err = cudaMemcpy(g_ignTime_step, gpuTime, sim.simDimX*sim.simDimY*sizeof(int), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(g_check, check, sim.simDimX*sim.simDimY*sizeof(bool), cudaMemcpyHostToDevice);
 
     // Kernel Loop
     int counter = 0;
     // terminate = 0;
     cout << "Kicking off Kernels" << endl;
     typeof(syncCounter) terminate = -1;
-    // int B = 100;
-    // int T = 100;
+    // int B = 128;
+    // int T = 128;
     int B = S;
     int T = S;
-
     if(T >= 1024){
       T = 512;
-      // B = sim.simDimX*sim.simDimY / T;
+      B = sim.simDimX*sim.simDimY / T;
     }
     while(terminate <= 0){
-    // while(counter < 1966){
+    // while(counter < 34){
       counter++;
-      // Do calculations
-      MinTime<<<B,T>>>(g_ignTime, g_rothData, 
-                           g_times, g_L_n, sim.simDimX*sim.simDimY,
+      // ITERATIVE MINIMAL TIME
+        // Do calculations
+        ItMinTime<<<B,T>>>(g_ignTime_in,g_ignTime_out, g_ignTime_step, g_rothData, 
+        // ItMinTime<<<1,1>>>(g_ignTime_in,g_ignTime_out, g_ignTime_step, g_rothData,
+                           g_times, g_L_n, g_check, sim.simDimX*sim.simDimY,
                            sim.simDimX, sim.simDimY);
-      // Update Time Kernel 
-      timeKernelMT<<<1,1>>>(g_times);
+        // cout << "step caclulated\n";
+        // Copy from output to write
+        copyKernelIMT<<<B,T>>>(g_ignTime_in, g_ignTime_step,
+                            g_check, sim.simDimX*sim.simDimY);
 
-      // cudaDeviceSynchronize();
-      err = cudaMemcpyFromSymbol(&terminate, end, sizeof(end), 0, 
-                                 cudaMemcpyDeviceToHost);
-      // err = cudaMemcpyFromSymbol(&terminate, syncCounter, sizeof(syncCounter), 0, 
-      //                            cudaMemcpyDeviceToHost);
-      if (err != cudaSuccess) {
-          std::cerr << "Error copying from GPU: " << cudaGetErrorString(err) << std::endl;
-          exit(1);
-      }
-      // cout << terminate <<endl;
-      // if(terminate < sim.simDimX*sim.simDimY)
-      //   terminate = -1;
-
-        if(terminate < 4)
+        cudaDeviceSynchronize();
+        // for(int k = 0; k < sim.simDimX*sim.simDimY; k++)
+        //   cout << check[k] <<  " ";
+        // cout << endl;
+        err = cudaMemcpyFromSymbol(&terminate, end, sizeof(end), 0, 
+                                   cudaMemcpyDeviceToHost);
+        // err = cudaMemcpyFromSymbol(&terminate, syncCounter, sizeof(syncCounter), 0, 
+        //                            cudaMemcpyDeviceToHost);
+        if (err != cudaSuccess) {
+            std::cerr << "Error copying from GPU: " << cudaGetErrorString(err) << std::endl;
+            exit(1);
+        }
+        // cout << terminate <<endl;
+        if(terminate < sim.simDimX*sim.simDimY)
           terminate = -1;
-      // cout << " --------- " <<  counter <<  " --------- " << endl;
-      // cout << "TimeNow: " << timeSteppers[0] <<  " TimeNext: " << timeSteppers[1] << endl;
-      /*err = cudaMemcpy(timeSteppers, g_times, 2*sizeof(int), cudaMemcpyDeviceToHost);
-      timeSteppers[0] = timeSteppers[1];
-      timeSteppers[1] = INF;
-      err = cudaMemcpy(g_times, timeSteppers, 2*sizeof(int), cudaMemcpyHostToDevice);*/
 
-        
-      if (err != cudaSuccess) {
-          std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-          exit(1);
-      }
+        // cout << counter <<endl;
+        // Swap Pointers for loop
+        int *swap = g_ignTime_in;
+        g_ignTime_in = g_ignTime_out;
+        g_ignTime_out = swap;
 
     }
     terminate = 0;
@@ -175,7 +172,10 @@ int main(){
     // cudaEventElapsedTime( &calcTime, start, end);
     cout << "Simulation Complete" << endl;
     // Copy back to device
-    err = cudaMemcpy(gpuTime, g_ignTime, sim.simDimX*sim.simDimY*sizeof(int), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy(gpuTime, g_ignTime_in, sim.simDimX*sim.simDimY*sizeof(int), cudaMemcpyDeviceToHost);
+    // err = cudaMemcpy(gpuRoth, g_rothData, sim.simDimX*sim.simDimY*3*sizeof(float), cudaMemcpyDeviceToHost);
+    // err = cudaMemcpy(timeSteppers, g_times, 2*sizeof(float), cudaMemcpyDeviceToHost);
+    // err = cudaMemcpy(sim.L_n, g_L_n, 16*sizeof(float), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         std::cerr << "Error copying from GPU: " << cudaGetErrorString(err) << std::endl;
         exit(1);
@@ -199,10 +199,31 @@ int main(){
     // cudaEventDestroy( m_end );
 
       // Free memory
-      cudaFree(g_ignTime);
+      cudaFree(g_ignTime_in);
+      cudaFree(g_ignTime_out);
       cudaFree(g_rothData);
       cudaFree(g_times);
       cudaFree(g_L_n);
+      // cudaFree(g_burnDist);
+    cudaFree(g_ignTime_step);
+    cudaFree(g_check);
+// #endif
+// #if BD
+//     cudaFree(g_burnDist);
+// #endif
+//       if (err != cudaSuccess) {
+//         std::cerr << "Error copying from GPU: " << cudaGetErrorString(err) << std::endl;
+//         exit(1);
+//     }
+
+      // //////////// Debugging output test
+      // for(int i = 0; i < sim.simDimX*sim.simDimY; i++){
+      //   if(gpuTime[i] != INF)
+      //     cout << gpuTime[i] << " ";
+      // }
+      // cout << endl;
+
+
 
       // Write data to file
       char threadNum[21];
@@ -221,9 +242,16 @@ int main(){
         }
         // fout << (int)sim.ignTime[i] << " ";
         // fout << (int)ignTimeNew[i] << " ";
-        fout << gpuTime[i] / 100<< " ";
+        fout << (int)gpuTime[i] /100 << " ";
       }
       fout.close();
+      cout << terminate << endl;
+    err = cudaMemcpyToSymbol(end, &terminate, sizeof(end), 0, 
+                             cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) {
+        std::cerr << "Error copying from GPU: " << cudaGetErrorString(err) << std::endl;
+        exit(1);
+    }
    }
 
    return 0;

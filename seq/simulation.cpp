@@ -7,8 +7,8 @@ const int INF = 9999999;
 
 #define PROFILE 1
 #define BURNDIST 0
-#define MT 0
-#define IMT 1
+#define MT 1
+#define IMT 0
 
 // enum simulation_type {
 //    BURNDIST = 0,
@@ -178,12 +178,12 @@ int main(){
                             continue;
                         ncell = ncol + nrow*sim.simDimY;
 
-                        ROS = sim.rothData[row][col].x * (1.0 - sim.rothData[row][col].y) / 
-                              (1.0 - sim.rothData[row][col].y * cos(sim.rothData[row][col].z * pi/180));
-                        float ignTimeNew = sim.ignTime[ncell] + sim.L_n[n] / ROS;
+                        ROS = sim.rothData[nrow][ncol].x * (1.0 - sim.rothData[nrow][ncol].y) / 
+                              (1.0 - sim.rothData[nrow][ncol].y * cos(sim.rothData[nrow][ncol].z * pi/180));
+                        float ignTimeNew = sim.ignTime[ncell] + (sim.L_n[n] / ROS) *100;
                         ignTimeMin = ignTimeNew*(ignTimeNew < ignTimeMin) + ignTimeMin*(ignTimeNew >= ignTimeMin);
                     }
-                    sim.ignTimeNew[cell] = ignTimeMin;
+                    sim.ignTimeNew[cell] = (int)ignTimeMin;
                 }
             }
         }
@@ -304,7 +304,7 @@ int main(){
             // std::cout << std::endl;
             fout << '\n';
         }
-        fout << (int)sim.ignTime[i] << " ";
+        fout << (int)sim.ignTime[i] /100 << " ";
         // fout << (int)ignTimeNew[i] << " ";
       }
       fout.close();

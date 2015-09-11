@@ -12,7 +12,7 @@ const int INF = 32767;
 /////////////////////////////////////////////////////////////////////////////
 //                              Minimal Time
 /////////////////////////////////////////////////////////////////////////////
-__global__ void MinTime(int* ignTime, int* rothData, int* times, 
+__global__ void MinTime(int* ignTime, float* rothData, int* times, 
                         float* L_n, int size, int rowSize,
                         int colSize){
    /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW  NNW NNE NEE SEE SSE SSW SWW NWW*/
