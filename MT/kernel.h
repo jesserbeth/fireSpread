@@ -38,13 +38,18 @@ __global__ void MinTime(int* ignTime, float* rothData, int* times,
       ignCell = ignTime[cell];
 
       // Do atomic update of TimeNext Var (atomicMin)
-      if(ignCell > timeNow){
-        int old = atomicMin(&times[1], ignCell);
-        if(ignCell < old){
-          timeNext = ignCell;
-          // printf("First If \n");
-        }
+      if(timeNext > ignCell && ignCell > timeNow){
+         atomicMin(&times[1], ignCell);
+         timeNext = ignCell;
       }
+
+      // if(ignCell > timeNow){
+      //   int old = atomicMin(&times[1], ignCell);
+      //   if(ignCell < old){
+      //     timeNext = ignCell;
+      //     // printf("First If \n");
+      //   }
+      // }
       else if(ignCell == timeNow){ // I am on fire now, and will propagate 
          // Check through neighbors
          for(int n = 0; n < 16; n++){

@@ -29,7 +29,7 @@ int main(){
   // cout << "Name: " << prop.name << endl;
   // cout << "RegPerBlock: " << prop.regsPerBlock << endl;
   // int SIMTYPE = 1;
-   for(int S = 2048; S <= 2048; S<<=1){
+   for(int S = 256; S <= 256; S<<=1){
     cout << "Timing: " << S << "x" << S << " Input" << endl;
       // Declare simulation variables
       // int cell, row, col, nrow, ncol, ncell;
@@ -120,10 +120,11 @@ int main(){
     // terminate = 0;
     cout << "Kicking off Kernels" << endl;
     typeof(syncCounter) terminate = -1;
-    // int B = 100;
+    int B = 16;
     // int T = 100;
-    int B = S;
-    int T = S;
+    int T = sim.simDimX*sim.simDimY / B;
+    // int B = S;
+    // int T = S;
 
     if(T >= 1024){
       T = 512;
