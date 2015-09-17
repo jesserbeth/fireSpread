@@ -6,8 +6,8 @@
 const int INF = 9999999;
 
 #define PROFILE 1
-#define BURNDIST 0
-#define MT 1
+#define BURNDIST 1
+#define MT 0
 #define IMT 0
 
 // enum simulation_type {
@@ -17,7 +17,7 @@ const int INF = 9999999;
 // };
 
 int main(){
-   for(int T = 2048; T <= 2048; T<<=1){
+   for(int T = 256; T <= 256; T<<=1){
    // for(int T = 256; T <= 256; T<<=1){
       // Declare simulation variables
       int cell, row, col, nrow, ncol, ncell;
@@ -304,7 +304,13 @@ int main(){
             // std::cout << std::endl;
             fout << '\n';
         }
-        fout << (int)sim.ignTime[i] /100 << " ";
+        #if BURNDIST
+          fout << (int)sim.ignTime[i] << " ";
+        #endif
+
+        #if !BURNDIST
+          fout << (int)sim.ignTime[i] /100 << " ";
+        #endif
         // fout << (int)ignTimeNew[i] << " ";
       }
       fout.close();
