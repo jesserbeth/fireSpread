@@ -29,7 +29,7 @@ int main(){
   // cout << "Name: " << prop.name << endl;
   // cout << "RegPerBlock: " << prop.regsPerBlock << endl;
   // int SIMTYPE = 1;
-   for(int S = 256; S <= 256; S<<=1){
+   for(int S = 2048; S <= 2048; S<<=1){
     cout << "Timing: " << S << "x" << S << " Input" << endl;
       // Declare simulation variables
       // int cell, row, col, nrow, ncol, ncell;
@@ -131,7 +131,7 @@ int main(){
       // B = sim.simDimX*sim.simDimY / T;
     }
     while(terminate <= 0){
-    // while(counter < 1966){
+    // while(counter < 1969){
       counter++;
       // Do calculations
       MinTime<<<B,T>>>(g_ignTime, g_rothData, 
@@ -153,21 +153,20 @@ int main(){
       // if(terminate < sim.simDimX*sim.simDimY)
       //   terminate = -1;
 
-        if(terminate < 4)
-          terminate = -1;
-      // cout << " --------- " <<  counter <<  " --------- " << endl;
-      // cout << "TimeNow: " << timeSteppers[0] <<  " TimeNext: " << timeSteppers[1] << endl;
-      /*err = cudaMemcpy(timeSteppers, g_times, 2*sizeof(int), cudaMemcpyDeviceToHost);
-      timeSteppers[0] = timeSteppers[1];
-      timeSteppers[1] = INF;
-      err = cudaMemcpy(g_times, timeSteppers, 2*sizeof(int), cudaMemcpyHostToDevice);*/
-
-        
-      if (err != cudaSuccess) {
-          std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-          exit(1);
-      }
-
+      if(terminate < 4)
+        terminate = -1;
+    }
+    int finishCount = 0;
+    // Catch last corner to terminate simulation
+    while(finishCount <= 3){
+      counter++;
+      finishCount++;
+      // Do calculations
+      MinTime<<<B,T>>>(g_ignTime, g_rothData, 
+                           g_times, g_L_n, sim.simDimX*sim.simDimY,
+                           sim.simDimX, sim.simDimY);
+      // Update Time Kernel 
+      timeKernelMT<<<1,1>>>(g_times);
     }
     terminate = 0;
     // cudaEventRecord(end, 0);
@@ -225,7 +224,10 @@ int main(){
         fout << gpuTime[i] / 100<< " ";
       }
       fout.close();
+   cout << "-------------" << endl << endl;
+   cout << gpuTime[0] << endl;
    }
+
 
    return 0;
 }

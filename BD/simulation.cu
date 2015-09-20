@@ -26,7 +26,7 @@ int main(){
   // cout << "Name: " << prop.name << endl;
   // cout << "RegPerBlock: " << prop.regsPerBlock << endl;
   // int SIMTYPE = 1;
-   for(int S = 256; S <= 256; S<<=1){
+   for(int S = 2048; S <= 2048; S<<=1){
     cout << "Timing: " << S << "x" << S << " Input" << endl;
       // Declare simulation variables
       // int cell, row, col, nrow, ncol, ncell;
