@@ -13,8 +13,8 @@
 
 //   end = 1;
 //   printf("Kernel: %d\n", end);
-// }
-
+// }i
+const int SIZE = 64;
 int main(){
   // float memTime, calcTime;
   cudaError_t devError = cudaSetDevice(0);
@@ -25,7 +25,13 @@ int main(){
   // cout << "Name: " << prop.name << endl;
   // cout << "RegPerBlock: " << prop.regsPerBlock << endl;
   // int SIMTYPE = 1;
-   for(int S = 2048; S <= 2048; S<<=1){
+   int B = 1024;
+   if(SIZE < B)
+      B = SIZE;
+   int T = 256;
+   if(SIZE < T)
+      T = SIZE; 
+   for(int S = SIZE; S <= SIZE; S<<=1){
     cout << "Timing: " << S << "x" << S << " Input" << endl;
       // Declare simulation variables
       // int cell, row, col, nrow, ncol, ncell;
@@ -33,7 +39,7 @@ int main(){
       std::ofstream fout;
 
       // Initialize simulator
-      fireSim sim(S,S);
+      fireSim sim(SIZE,SIZE);
       struct timeval start, fin;
 
     sim.init();
@@ -122,12 +128,12 @@ int main(){
     typeof(syncCounter) terminate = -1;
     // int B = 128;
     // int T = 128;
-    int B = S;
-    int T = S;
-    if(T >= 1024){
-      T = 512;
-      B = sim.simDimX*sim.simDimY / T;
-    }
+    //int B = S;
+    //int T = S;
+    //if(T >= 1024){
+      //T = 256;
+      //B = 512;
+    //}
     while(terminate <= 0){
     // while(counter < 34){
       counter++;

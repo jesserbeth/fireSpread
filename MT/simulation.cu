@@ -18,7 +18,7 @@
 #define MT 1
 #define IMT 0
 #define BD 0
-
+const int SIZE = 2048;
 int main(){
   // float memTime, calcTime;
   cudaError_t devError = cudaSetDevice(0);
@@ -29,8 +29,10 @@ int main(){
   // cout << "Name: " << prop.name << endl;
   // cout << "RegPerBlock: " << prop.regsPerBlock << endl;
   // int SIMTYPE = 1;
-   for(int S = 2048; S <= 2048; S<<=1){
-    cout << "Timing: " << S << "x" << S << " Input" << endl;
+  int B = 1024;
+  int T = 128; 
+  for(int S = SIZE; S <= SIZE; S<<=1){
+    cout << "Timing: " << S  << "x" << S << "Size" << endl;
       // Declare simulation variables
       // int cell, row, col, nrow, ncol, ncell;
       // char simType[20];
@@ -87,7 +89,7 @@ int main(){
 
     // sprintf(simType, "../out/GPU_DEBUG");
     // sprintf(simType, "../out/GPU_DEBUG");
-
+   
     // Allocate Cuda Variables
     gettimeofday(&start, NULL);
     int *g_ignTime;
@@ -120,21 +122,25 @@ int main(){
     // terminate = 0;
     cout << "Kicking off Kernels" << endl;
     typeof(syncCounter) terminate = -1;
-    int B = 16;
+//    int B = 1024;
     // int T = 100;
-    int T = sim.simDimX*sim.simDimY / B;
+//    int T = sim.simDimX*sim.simDimY / B;
     // int B = S;
     // int T = S;
 
-    if(T >= 1024){
-      T = 512;
+    //if(T >= 1024){
+//      T = S;
+    if(S < B)
+      B = S;
+    if(S < T) 
+      T = S; 
       // B = sim.simDimX*sim.simDimY / T;
-    }
+    //}
     while(terminate <= 0){
     // while(counter < 1969){
       counter++;
       // Do calculations
-      MinTime<<<B,T>>>(g_ignTime, g_rothData, 
+     MinTime<<<B,T>>>(g_ignTime, g_rothData, 
                            g_times, g_L_n, sim.simDimX*sim.simDimY,
                            sim.simDimX, sim.simDimY);
       // Update Time Kernel 
